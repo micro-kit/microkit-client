@@ -1,0 +1,90 @@
+syntax = "proto3";
+
+package piliveserverpb;
+option go_package = "piliveserverpb";
+
+// PiLiveServer 服务定义
+service PiLiveServer {
+    // GetLiveUrl 获取播放地址
+    rpc GetLiveUrl (GetLiveUrlRequest) returns (GetLiveUrlReply) {}
+    // QueryLivesByApp 查询某个app下流列表
+    rpc QueryLivesByApp (QueryLivesByAppRequest) returns (QueryLivesByAppReply) {}
+    // HeartbeatLive 树莓派实时上报流地址心跳
+    rpc HeartbeatLive(stream HeartbeatLiveRequest) returns (stream HeartbeatLiveReply) {}
+    // UploadSnapshot 上传快照图片
+    rpc UploadSnapshot(UploadSnapshotRequest) returns (UploadSnapshotReply) {}
+    // PlayLive 客户端发送要播放流指令
+    rpc PlayLive(stream PlayLiveRequest) returns (PlayLiveReply) {}
+}
+
+// 一个流信息
+message LiveInfo {
+    string rtmp = 1;
+    string flv = 2;
+    string hls = 3;
+    string name = 4;
+    string snapshot = 5;
+    string appname = 6; // 流应用名 live
+    string live_id = 7; // 流id
+}
+
+/* 获取播放地址 */
+message GetLiveUrlRequest {
+    string appname = 1; // 流应用名 live
+    string live_id = 2; // 流id
+}
+
+message GetLiveUrlReply {
+    LiveInfo live = 1;
+}
+/* end 获取播放地址 */
+
+/* 查询某个app下流列表 */
+message QueryLivesByAppRequest {
+    string appname = 1; // 流应用名 live
+}
+
+message QueryLivesByAppReply {
+    repeated LiveInfo lives = 1; // 流列表
+}
+/* end 查询某个app下流列表 */
+
+/* 树莓派实时上报流地址心跳 */
+message HeartbeatLiveRequest {
+    string appname = 1; // 流应用名 live
+    string live_id = 2; // 流id
+    string time    = 3; // 上报时间 16进制时间戳
+    string name    = 4; // 流名称
+    string signature = 5; // 签名 - 根据登录token+时间生成
+}
+
+message HeartbeatLiveReply {
+    string status = 1; // 心跳记录流地址状态 ok | error
+    string push   = 2; // 是否推流 - 播放 play | 停止 stop
+}
+/* end 树莓派实时上报流地址心跳 */
+
+/* 上传快照图片 */
+message UploadSnapshotRequest {
+    string appname = 1; // 流应用名 live
+    string live_id = 2; // 流id
+    bytes body = 3; // 图片内容
+}
+
+message UploadSnapshotReply {
+    string status = 1; // 文件上传状态 ok | error
+}
+/* end 上传快照图片 */
+
+/* 客户端发送要播放流指令 */
+message PlayLiveRequest {
+    string appname = 1; // 流应用名 live
+    string live_id = 2; // 流id
+    string push    = 3; // 指令类型 - 播放 play | 停止 stop
+    string device_id = 4; // 设备唯一标识 - 用于确定当前有多少设备播放直播 - 当播放数量为0，发送停止播放
+}
+
+message PlayLiveReply {
+    string status = 1; // 是否成功 ok | error
+}
+/* end 客户端发送要播放流指令 */
